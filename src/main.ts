@@ -1,21 +1,24 @@
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { buildRoom } from './scene/room'
+import { setupLighting } from './scene/lighting'
+import { buildCounter } from './objects/counter'
+import { buildDecor } from './objects/decor'
 import { buildMachine } from './objects/machine'
 import { buildGrinder } from './objects/grinder'
 import { buildCup } from './objects/cup'
+import { buildPour } from './objects/pour'
 import { Interactions } from './interactions/raycaster'
 import { TextReveal } from './ui/textReveal'
 import { CameraRig, type Station } from './scene/camera'
 import { buildAffordance } from './scene/affordance'
 import { Sequence, type StationDef } from './interactions/sequence'
 import { StartPrompt } from './ui/startPrompt'
-import { buildPour } from './objects/pour'
-
 
 const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x0a0805)
-scene.fog = new THREE.Fog(0x0a0805, 8, 20)
+scene.background = new THREE.Color(0x2a1d12)
+scene.fog = new THREE.Fog(0x2a1d12, 14, 34)
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100)
 const stations: Station[] = [
@@ -32,53 +35,19 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.2
+renderer.toneMappingExposure = 1.1
 document.body.appendChild(renderer.domElement)
 
 const pmrem = new THREE.PMREMGenerator(renderer)
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
 
-const ambient = new THREE.AmbientLight(0xfff5e0, 0.3)
-scene.add(ambient)
+const { edisonBulb } = setupLighting(scene)
 
-const edisonBulb = new THREE.PointLight(0xffaa44, 3, 8)
-edisonBulb.position.set(0, 3.2, -1)
-edisonBulb.castShadow = true
-scene.add(edisonBulb)
+scene.add(buildRoom())
+scene.add(buildDecor())
 
-const windowLight = new THREE.DirectionalLight(0xfff0d0, 0.8)
-windowLight.position.set(4, 3, 2)
-windowLight.castShadow = true
-scene.add(windowLight)
-
-const floorGeo = new THREE.PlaneGeometry(10, 10)
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x5c3d1e, roughness: 0.9, metalness: 0.0 })
-const floor = new THREE.Mesh(floorGeo, floorMat)
-floor.rotation.x = -Math.PI / 2
-floor.receiveShadow = true
-scene.add(floor)
-
-const wallMat = new THREE.MeshStandardMaterial({ color: 0x6b4c2a, roughness: 0.95, metalness: 0.0 })
-
-const backWall = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), wallMat)
-backWall.position.set(0, 2.5, -3)
-scene.add(backWall)
-
-const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), wallMat)
-leftWall.position.set(-5, 2.5, 2)
-leftWall.rotation.y = Math.PI / 2
-scene.add(leftWall)
-
-const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), wallMat)
-rightWall.position.set(5, 2.5, 2)
-rightWall.rotation.y = -Math.PI / 2
-scene.add(rightWall)
-
-const counterMat = new THREE.MeshStandardMaterial({ color: 0x3d2008, roughness: 0.8, metalness: 0.05 })
-const counter = new THREE.Mesh(new THREE.BoxGeometry(4, 0.9, 0.8), counterMat)
-counter.position.set(0, 0.45, -1)
-counter.castShadow = true
-counter.receiveShadow = true
+const counter = buildCounter()
+counter.position.set(0, 0, -1)
 scene.add(counter)
 
 const machine = buildMachine()
@@ -100,18 +69,14 @@ scene.add(pour)
 const affordance = buildAffordance()
 scene.add(affordance)
 
-const bulbGeo = new THREE.SphereGeometry(0.06, 16, 16)
-const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffcc44, emissive: 0xffaa22, emissiveIntensity: 4 })
-const bulb = new THREE.Mesh(bulbGeo, bulbMat)
-bulb.position.copy(edisonBulb.position)
-scene.add(bulb)
-
 let time = 0
 function animate() {
   requestAnimationFrame(animate)
   time += 0.01
-  edisonBulb.intensity = 3 + Math.sin(time * 1.3) * 0.15
-  sequence.update(time)
+  // warm Edison flicker — slow breathe plus a faint high-frequency shimmer
+  edisonBulb.intensity = 2.4 + Math.sin(time * 1.3) * 0.12 + Math.sin(time * 7.7) * 0.03
+  sequence.update()
+  rig.update()
   renderer.render(scene, camera)
 }
 
@@ -121,10 +86,8 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight)
 })
 
-
 const interactions = new Interactions(camera, renderer.domElement)
 const textReveal = new TextReveal(document.getElementById('ui')!)
-
 
 const stationDefs: StationDef[] = [
   {

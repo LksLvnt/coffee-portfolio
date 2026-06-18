@@ -111,7 +111,8 @@ function animate() {
   requestAnimationFrame(animate)
   time += 0.01
   edisonBulb.intensity = 3 + Math.sin(time * 1.3) * 0.15
-  sequence.update(time)
+  sequence.update()
+  rig.update()
   renderer.render(scene, camera)
 }
 

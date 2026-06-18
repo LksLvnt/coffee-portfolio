@@ -15,7 +15,6 @@ export type StationDef = {
 
 export class Sequence {
   private defs: StationDef[]
-  private interactions: Interactions
   private rig: CameraRig
   private text: TextReveal
   private affordance: THREE.Mesh
@@ -33,7 +32,6 @@ export class Sequence {
     affordance: THREE.Mesh
   ) {
     this.defs = defs
-    this.interactions = interactions
     this.rig = rig
     this.text = text
     this.affordance = affordance
@@ -80,7 +78,7 @@ export class Sequence {
     this.affordance.visible = true
   }
 
-  update(time: number) {
+  update() {
     if (this.done || this.index < 0 || this.index >= this.defs.length) return
     const def = this.defs[this.index]
     if (this.holding && this.ready && this.progress < 1) {

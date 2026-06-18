@@ -8,6 +8,7 @@ export type StationDef = {
   label: string
   body: string
   hold: number
+  onArrive?: (ready: () => void) => void
   onProgress?: (t: number) => void
   onComplete?: () => void
 }
@@ -22,6 +23,7 @@ export class Sequence {
   private holding = false
   private progress = 0
   private done = false
+  private ready = true
 
   constructor(
     defs: StationDef[],
@@ -65,6 +67,12 @@ export class Sequence {
     const def = this.defs[this.index]
     this.rig.goTo(this.index + 1)
     this.point(def.object)
+    if (def.onArrive) {
+      this.ready = false
+      def.onArrive(() => { this.ready = true })
+    } else {
+      this.ready = true
+    }
   }
 
   private point(obj: THREE.Object3D) {
@@ -75,7 +83,7 @@ export class Sequence {
   update(time: number) {
     if (this.done || this.index < 0 || this.index >= this.defs.length) return
     const def = this.defs[this.index]
-    if (this.holding && this.progress < 1) {
+    if (this.holding && this.ready && this.progress < 1) {
       this.progress += 1 / (def.hold * 60)
       def.onProgress?.(this.progress)
       if (this.progress >= 1) {

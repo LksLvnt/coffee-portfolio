@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import gsap from 'gsap'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { buildMachine } from './objects/machine'
 import { buildGrinder } from './objects/grinder'
@@ -9,6 +10,7 @@ import { CameraRig, type Station } from './scene/camera'
 import { buildAffordance } from './scene/affordance'
 import { Sequence, type StationDef } from './interactions/sequence'
 import { StartPrompt } from './ui/startPrompt'
+import { buildPour } from './objects/pour'
 
 
 const scene = new THREE.Scene()
@@ -91,6 +93,10 @@ const cup = buildCup()
 cup.position.set(1.2, 0.9, -0.95)
 scene.add(cup)
 
+const pour = buildPour()
+pour.position.set(-0.32, 1.02, -0.85)
+scene.add(pour)
+
 const affordance = buildAffordance()
 scene.add(affordance)
 
@@ -138,6 +144,26 @@ const stationDefs: StationDef[] = [
     label: 'Pull · 02',
     body: 'I work in Angular and TypeScript by day, and reach for FastAPI, Spring Boot, and Docker when a project demands more. I learn by shipping.',
     hold: 2.5,
+    onArrive: (ready) => {
+      gsap.to(cup.position, {
+        x: -0.32, z: -0.85, duration: 0.9, ease: 'power2.inOut',
+        onComplete: ready
+      })
+    },
+    onProgress: (t) => {
+      pour.visible = t > 0.15 && t < 0.95
+      const coffee = cup.userData.coffee as THREE.Mesh
+      coffee.visible = true
+      const fill = Math.min(t, 1)
+      coffee.scale.y = fill * 40
+      coffee.position.y = 0.018 + fill * 0.03
+      const mat = coffee.material as THREE.MeshStandardMaterial
+      mat.color.setRGB(0.16 + fill * 0.25, 0.08 + fill * 0.14, 0.03 + fill * 0.04)
+    },
+    onComplete: () => {
+      pour.visible = false
+      gsap.to(cup.position, { x: 1.2, z: -0.95, duration: 1.0, ease: 'power2.inOut' })
+    },
   },
   {
     object: cup,

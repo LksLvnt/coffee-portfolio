@@ -1,12 +1,26 @@
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { buildMachine } from './objects/machine'
+import { buildGrinder } from './objects/grinder'
+import { buildCup } from './objects/cup'
+import { Interactions } from './interactions/raycaster'
+import { TextReveal } from './ui/textReveal'
+import { CameraRig, type Station } from './scene/camera'
+import { buildAffordance } from './scene/affordance'
+
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x0a0805)
 scene.fog = new THREE.Fog(0x0a0805, 8, 20)
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100)
-camera.position.set(0, 1.6, 5)
-camera.lookAt(0, 1.2, 0)
+const stations: Station[] = [
+  { pos: new THREE.Vector3(0, 1.6, 4.5), look: new THREE.Vector3(0, 1.1, -1) },
+  { pos: new THREE.Vector3(-1.3, 1.25, -0.1), look: new THREE.Vector3(-1.3, 1.0, -1.05) },
+  { pos: new THREE.Vector3(0, 1.3, 0.2), look: new THREE.Vector3(0, 1.15, -1.15) },
+  { pos: new THREE.Vector3(1.2, 1.25, 0.0), look: new THREE.Vector3(1.2, 1.0, -0.95) },
+]
+const rig = new CameraRig(camera, stations)
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -16,6 +30,9 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.2
 document.body.appendChild(renderer.domElement)
+
+const pmrem = new THREE.PMREMGenerator(renderer)
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
 
 const ambient = new THREE.AmbientLight(0xfff5e0, 0.3)
 scene.add(ambient)
@@ -60,6 +77,28 @@ counter.castShadow = true
 counter.receiveShadow = true
 scene.add(counter)
 
+const machine = buildMachine()
+machine.position.set(0, 0.9, -1.15)
+scene.add(machine)
+
+const grinder = buildGrinder()
+grinder.position.set(-1.3, 0.9, -1.05)
+scene.add(grinder)
+
+const cup = buildCup()
+cup.position.set(1.2, 0.9, -0.95)
+scene.add(cup)
+
+const affordance = buildAffordance()
+scene.add(affordance)
+
+function pointAffordanceAt(obj: THREE.Object3D) {
+  affordance.position.set(obj.position.x, 0.905, obj.position.z)
+  affordance.visible = true
+}
+
+pointAffordanceAt(grinder)
+
 const bulbGeo = new THREE.SphereGeometry(0.06, 16, 16)
 const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffcc44, emissive: 0xffaa22, emissiveIntensity: 4 })
 const bulb = new THREE.Mesh(bulbGeo, bulbMat)
@@ -71,6 +110,23 @@ function animate() {
   requestAnimationFrame(animate)
   time += 0.01
   edisonBulb.intensity = 3 + Math.sin(time * 1.3) * 0.15
+  if (grinding && grindProgress < 1) {
+    grindProgress += 0.008
+    const beans = grinder.userData.beans as THREE.Group
+    beans.children.forEach((b, i) => {
+      b.position.y = 0.48 + Math.abs(Math.sin(time * 20 + i)) * 0.04
+    })
+    if (grindProgress > 0.15 && !grindRevealed) {
+      grindRevealed = true
+      affordance.visible = false
+      textReveal.show('Grind · 01', "I'm Levente — a developer from Pécs who builds things in order to understand them. Skateboards, espresso, and clean code, roughly in that order.")
+      rig.goTo(1)
+    }
+  }
+  rig.update()
+  if (affordance.visible) {
+    affordance.material.opacity = 0.35 + Math.abs(Math.sin(time * 2.5)) * 0.35
+  }
   renderer.render(scene, camera)
 }
 
@@ -78,6 +134,21 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
+})
+
+const interactions = new Interactions(camera, renderer.domElement)
+const textReveal = new TextReveal(document.getElementById('ui')!)
+
+let grinding = false
+let grindProgress = 0
+let grindRevealed = false
+
+interactions.add({
+  object: grinder,
+  onHover: () => grinder.scale.setScalar(1.04),
+  onUnhover: () => grinder.scale.setScalar(1.0),
+  onDown: () => { grinding = true },
+  onUp: () => { grinding = false },
 })
 
 animate()

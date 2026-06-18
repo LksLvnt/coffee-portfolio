@@ -10,6 +10,7 @@ export class CameraRig {
   private camera: THREE.PerspectiveCamera
   private stations: Station[]
   private lookTarget: THREE.Vector3
+  private idle = true
   current = 0
 
   constructor(camera: THREE.PerspectiveCamera, stations: Station[]) {
@@ -34,7 +35,16 @@ export class CameraRig {
     })
   }
 
-  update() {
-    this.camera.lookAt(this.lookTarget)
+  setIdle(v: boolean) {
+    this.idle = v
   }
+
+  update() {
+      if (this.idle && this.current === 0) {
+        const t = performance.now() * 0.0002
+        this.camera.position.x = this.stations[0].pos.x + Math.sin(t) * 0.35
+        this.camera.position.y = this.stations[0].pos.y + Math.sin(t * 0.7) * 0.12
+      }
+      this.camera.lookAt(this.lookTarget)
+    }
 }

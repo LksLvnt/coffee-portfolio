@@ -7,6 +7,8 @@ import { Interactions } from './interactions/raycaster'
 import { TextReveal } from './ui/textReveal'
 import { CameraRig, type Station } from './scene/camera'
 import { buildAffordance } from './scene/affordance'
+import { Sequence, type StationDef } from './interactions/sequence'
+import { StartPrompt } from './ui/startPrompt'
 
 
 const scene = new THREE.Scene()
@@ -92,13 +94,6 @@ scene.add(cup)
 const affordance = buildAffordance()
 scene.add(affordance)
 
-function pointAffordanceAt(obj: THREE.Object3D) {
-  affordance.position.set(obj.position.x, 0.905, obj.position.z)
-  affordance.visible = true
-}
-
-pointAffordanceAt(grinder)
-
 const bulbGeo = new THREE.SphereGeometry(0.06, 16, 16)
 const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffcc44, emissive: 0xffaa22, emissiveIntensity: 4 })
 const bulb = new THREE.Mesh(bulbGeo, bulbMat)
@@ -110,23 +105,7 @@ function animate() {
   requestAnimationFrame(animate)
   time += 0.01
   edisonBulb.intensity = 3 + Math.sin(time * 1.3) * 0.15
-  if (grinding && grindProgress < 1) {
-    grindProgress += 0.008
-    const beans = grinder.userData.beans as THREE.Group
-    beans.children.forEach((b, i) => {
-      b.position.y = 0.48 + Math.abs(Math.sin(time * 20 + i)) * 0.04
-    })
-    if (grindProgress > 0.15 && !grindRevealed) {
-      grindRevealed = true
-      affordance.visible = false
-      textReveal.show('Grind · 01', "I'm Levente — a developer from Pécs who builds things in order to understand them. Skateboards, espresso, and clean code, roughly in that order.")
-      rig.goTo(1)
-    }
-  }
-  rig.update()
-  if (affordance.visible) {
-    affordance.material.opacity = 0.35 + Math.abs(Math.sin(time * 2.5)) * 0.35
-  }
+  sequence.update(time)
   renderer.render(scene, camera)
 }
 
@@ -136,19 +115,43 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight)
 })
 
+
 const interactions = new Interactions(camera, renderer.domElement)
 const textReveal = new TextReveal(document.getElementById('ui')!)
 
-let grinding = false
-let grindProgress = 0
-let grindRevealed = false
 
-interactions.add({
-  object: grinder,
-  onHover: () => grinder.scale.setScalar(1.04),
-  onUnhover: () => grinder.scale.setScalar(1.0),
-  onDown: () => { grinding = true },
-  onUp: () => { grinding = false },
+const stationDefs: StationDef[] = [
+  {
+    object: grinder,
+    label: 'Grind · 01',
+    body: "I'm Levente — a developer from Pécs who builds things in order to understand them. Skateboards, espresso, and clean code, roughly in that order.",
+    hold: 2,
+    onProgress: (t) => {
+      const beans = grinder.userData.beans as THREE.Group
+      beans.children.forEach((b, i) => {
+        b.position.y = 0.48 + Math.abs(Math.sin(performance.now() * 0.02 + i)) * 0.04 * (1 - t * 0.5)
+      })
+    },
+  },
+  {
+    object: machine,
+    label: 'Pull · 02',
+    body: 'I work in Angular and TypeScript by day, and reach for FastAPI, Spring Boot, and Docker when a project demands more. I learn by shipping.',
+    hold: 2.5,
+  },
+  {
+    object: cup,
+    label: 'Pour · 03',
+    body: 'StudyMate, UniTools, a municipal platform in production — I build full things, not demos. Each one taught me something the last one couldn\'t.',
+    hold: 2,
+  },
+]
+
+const sequence = new Sequence(stationDefs, interactions, rig, textReveal, affordance)
+
+new StartPrompt(document.getElementById('ui')!, () => {
+  rig.setIdle(false)
+  sequence.start()
 })
 
 animate()

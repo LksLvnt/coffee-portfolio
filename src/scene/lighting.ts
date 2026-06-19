@@ -5,10 +5,10 @@ export type Lighting = { edisonBulb: THREE.PointLight }
 // Warm, cozy lighting rig: soft daylight fill + a hanging Edison bulb over the bar.
 export function setupLighting(scene: THREE.Scene): Lighting {
   // even, warm ambient fill (sky warm / floor warm) — the daytime coffee-shop glow
-  const hemi = new THREE.HemisphereLight(0xfff2dd, 0x6b4a2a, 0.75)
+  const hemi = new THREE.HemisphereLight(0xfff2dd, 0x6b4a2a, 0.6)
   scene.add(hemi)
 
-  const ambient = new THREE.AmbientLight(0xfff0db, 0.35)
+  const ambient = new THREE.AmbientLight(0xfff0db, 0.28)
   scene.add(ambient)
 
   // daylight pouring through the right-hand window

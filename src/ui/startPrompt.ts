@@ -5,11 +5,14 @@ export class StartPrompt {
     this.el = document.createElement('div')
     this.el.textContent = 'make a coffee'
     this.el.style.cssText = [
-      'position:absolute', 'left:50%', 'bottom:14%', 'transform:translateX(-50%)',
-      'color:#c9a14a', "font-family:Georgia,'Times New Roman',serif",
-      'font-size:18px', 'letter-spacing:5px', 'text-transform:uppercase',
+      'position:absolute', 'left:50%', 'bottom:15%', 'transform:translateX(-50%)',
+      'color:#f1dca6', "font-family:Georgia,'Times New Roman',serif",
+      'font-size:21px', 'letter-spacing:6px', 'text-transform:uppercase',
       'cursor:pointer', 'pointer-events:auto', 'opacity:0',
-      'transition:opacity 1.5s ease', 'user-select:none'
+      'transition:opacity 1.5s ease', 'user-select:none',
+      'padding:18px 44px', 'white-space:nowrap',
+      'text-shadow:0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(0,0,0,0.6)',
+      'background:radial-gradient(ellipse at center, rgba(8,5,2,0.55) 0%, rgba(8,5,2,0) 72%)'
     ].join(';')
     root.appendChild(this.el)
 

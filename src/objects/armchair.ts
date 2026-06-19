@@ -3,7 +3,7 @@ import * as THREE from 'three'
 // A worn leather armchair with a draped knit blanket. Faces +z; base at y = 0.
 export function buildArmchair(): THREE.Group {
   const g = new THREE.Group()
-  const leather = new THREE.MeshStandardMaterial({ color: 0x7a4a28, roughness: 0.55, metalness: 0.05 })
+  const leather = new THREE.MeshStandardMaterial({ color: 0x6b3a1d, roughness: 0.72, metalness: 0 })
 
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.22, 0.72), leather)
   seat.position.set(0, 0.45, 0)

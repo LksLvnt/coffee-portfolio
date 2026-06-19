@@ -172,8 +172,8 @@ export function buildFloorPlant(): THREE.Group {
     g.add(trunk)
     const leaves = 5 + Math.floor(Math.random() * 4)
     for (let i = 0; i < leaves; i++) {
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(rand(0.1, 0.16), 8, 6), leafMat(pick(GREENS)))
-      leaf.scale.set(1, 1.5, 0.18)
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(rand(0.13, 0.19), 8, 6), leafMat(pick(GREENS)))
+      leaf.scale.set(1, 1.25, 0.32)
       leaf.position.set(
         lean * h * 0.5 + rand(-0.18, 0.18),
         0.4 + h * rand(0.45, 1.0),

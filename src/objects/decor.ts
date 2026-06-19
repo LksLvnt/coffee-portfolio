@@ -82,7 +82,7 @@ export function buildDecor(): THREE.Group {
   decor.add(chair)
 
   const table = buildSideTable()
-  table.position.set(3.25, 0, 0.75)
+  table.position.set(3.05, 0, 0.9)
   decor.add(table)
 
   return decor

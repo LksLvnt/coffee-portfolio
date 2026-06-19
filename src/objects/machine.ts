@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-const steel = new THREE.MeshStandardMaterial({ color: 0xcfcfcf, metalness: 0.85, roughness: 0.3 })
+const steel = new THREE.MeshStandardMaterial({ color: 0xb8babd, metalness: 0.8, roughness: 0.34 })
 const darkSteel = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.6, roughness: 0.45 })
 const chrome = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1, roughness: 0.12 })
 const woodHandle = new THREE.MeshStandardMaterial({ color: 0x3a2412, metalness: 0, roughness: 0.7 })

@@ -31,9 +31,31 @@ export function buildGrinder(): THREE.Group {
   g.add(beans)
   g.userData.beans = beans
 
-  const chute = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.06), metalMat)
-  chute.position.set(0, 0.16, 0.14)
-  g.add(chute)
+  // dosing throat below the burrs
+  const throat = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.1), bodyMat)
+  throat.position.set(0, 0.13, 0.12)
+  g.add(throat)
+
+  // dosing spout — grounds pour out here, angled forward over the portafilter
+  const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.02, 0.1, 14), metalMat)
+  spout.position.set(0, 0.18, 0.2)
+  spout.rotation.x = 0.55
+  spout.castShadow = true
+  g.add(spout)
+  const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.024, 0.02, 14), bodyMat)
+  mouth.position.set(0, 0.145, 0.235)
+  mouth.rotation.x = 0.55
+  g.add(mouth)
+
+  // dosing fork — cradles the portafilter under the spout
+  for (const x of [-0.05, 0.05]) {
+    const prong = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.16), metalMat)
+    prong.position.set(x, 0.045, 0.2)
+    g.add(prong)
+  }
+  const forkBar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.012, 0.012), metalMat)
+  forkBar.position.set(0, 0.045, 0.12)
+  g.add(forkBar)
 
   return g
 }

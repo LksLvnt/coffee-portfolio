@@ -41,12 +41,29 @@ export function buildMachine(): THREE.Group {
     }
   }
 
-  for (const x of [-0.62, 0.62]) {
-    const wand = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 12), chrome)
-    wand.position.set(x, 0.18, 0.18)
-    wand.rotation.x = Math.PI / 6
-    g.add(wand)
-  }
+  // right wand stays decorative; the left one is the working steam wand that
+  // reaches forward and down into the milk pitcher during the steam step.
+  const rightWand = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 12), chrome)
+  rightWand.position.set(0.62, 0.18, 0.18)
+  rightWand.rotation.x = Math.PI / 6
+  g.add(rightWand)
+
+  const lx = -0.62
+  const pivot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 12), darkSteel)
+  pivot.position.set(lx, 0.34, 0.08)
+  g.add(pivot)
+  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.18, 12), chrome)
+  upper.position.set(lx, 0.27, 0.13)
+  upper.rotation.x = 0.6
+  g.add(upper)
+  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 12), chrome)
+  lower.position.set(lx, 0.16, 0.27)
+  lower.rotation.x = 1.1
+  g.add(lower)
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.012, 0.05, 12), darkSteel)
+  tip.position.set(lx, 0.09, 0.33)
+  tip.rotation.x = 1.1
+  g.add(tip)
 
   const gauge = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 24), darkSteel)
   gauge.rotation.x = Math.PI / 2

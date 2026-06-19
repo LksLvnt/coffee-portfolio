@@ -67,12 +67,12 @@ const DOCK = new THREE.Vector3(-0.32, 1.04, -0.81)        // portafilter locked 
 const DOCK_LIFT = new THREE.Vector3(-0.32, 1.2, -0.64)    // lifted clear of the head
 const GRIND_POS = new THREE.Vector3(-1.3, 0.97, -0.82)    // held under the grinder chute
 const CUP_START = new THREE.Vector3(1.2, 0.9, -0.95)
-const CUP_UNDER = new THREE.Vector3(-0.32, 0.9, -0.78)    // under the group, catching the shot
-const CUP_ART = new THREE.Vector3(-0.15, 0.9, -0.52)      // clear spot, out from under the group, for the pour
-const CUP_SERVE = new THREE.Vector3(-0.12, 0.92, 0.32)    // slid toward the camera
+const CUP_UNDER = new THREE.Vector3(-0.32, 0.93, -0.78)   // on the drip tray, under the group, catching the shot
+const CUP_ART = new THREE.Vector3(0.02, 0.9, -0.74)       // out from under the group, centred well on the counter
+const CUP_SERVE = new THREE.Vector3(0.02, 0.92, -0.58)    // slid toward the camera, still on the counter
 const PITCHER_PARK = new THREE.Vector3(0.55, 0.9, -0.78)
 const STEAM_POS = new THREE.Vector3(-0.62, 0.9, -0.82)    // pitcher under the steam wand
-const ART_POS = new THREE.Vector3(-0.15, 1.12, -0.52)     // pitcher directly above the cup
+const ART_POS = new THREE.Vector3(0.02, 1.12, -0.74)      // pitcher directly above the cup
 const TAMP_PARK = new THREE.Vector3(-1.88, 0.92, -0.66)
 
 const cup = buildCup()
@@ -114,7 +114,7 @@ groundsStream.position.set(-1.3, 1.02, -0.83)
 groundsStream.rotation.x = 0.3
 scene.add(groundsStream)
 const milkStream = buildStream(0xfbf6ec, 0.9)
-milkStream.position.set(-0.15, 1.02, -0.52)
+milkStream.position.set(0.02, 1.02, -0.74)
 scene.add(milkStream)
 
 const affordance = buildAffordance()
@@ -131,8 +131,8 @@ const CAM = {
   tamp: { pos: v(-1.12, 1.2, -0.4), look: v(-1.3, 0.99, -0.84) },
   pull: { pos: v(0.18, 1.04, -0.34), look: v(-0.3, 0.97, -0.82) },                // 3/4 from the right, clears the handle
   steam: { pos: v(-0.56, 1.12, -0.06), look: v(-0.62, 0.96, -0.85) },
-  art: { pos: v(-0.1, 1.34, 0.02), look: v(-0.15, 0.98, -0.52) },                 // top-down on the pour
-  serve: { pos: v(-0.12, 1.34, 0.5), look: v(-0.12, 0.96, -0.18) },               // top-down hero, rosetta visible
+  art: { pos: v(0.02, 1.32, -0.28), look: v(0.02, 0.98, -0.74) },                 // top-down on the pour
+  serve: { pos: v(0.02, 1.24, 0.16), look: v(0.02, 0.96, -0.64) },                // close hero on the finished cup
 }
 
 // ---------- helpers ----------
@@ -304,7 +304,7 @@ const steps: Step[] = [
     id: 'art',
     cam: CAM.art,
     target: pitcher,
-    ringAt: new THREE.Vector3(-0.15, 0, -0.52),
+    ringAt: new THREE.Vector3(0.02, 0, -0.74),
     hold: 2.4,
     hint: 'pour the latte art',
     label: 'Pour · 05',

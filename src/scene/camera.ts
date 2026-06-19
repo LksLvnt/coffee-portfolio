@@ -75,6 +75,13 @@ export class CameraRig {
     this.sph.phi = THREE.MathUtils.clamp(this.sph.phi + this.orbitPitch, 0.15, Math.PI * 0.85)
     this.offset.setFromSpherical(this.sph)
     this.camera.position.copy(this.lookTarget).add(this.offset)
+
+    // safety bounds: never drop into the counter or leave the room
+    const p = this.camera.position
+    p.x = THREE.MathUtils.clamp(p.x, -3.45, 3.45)
+    p.y = THREE.MathUtils.clamp(p.y, 0.97, 3.9)
+    p.z = THREE.MathUtils.clamp(p.z, -2.7, 5.3)
+
     this.camera.lookAt(this.lookTarget)
   }
 }

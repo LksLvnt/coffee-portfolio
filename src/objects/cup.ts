@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { latteArtTexture } from '../scene/textures'
 
 export function buildCup(): THREE.Group {
   const g = new THREE.Group()
@@ -25,6 +26,19 @@ export function buildCup(): THREE.Group {
   coffee.visible = false
   g.add(coffee)
   g.userData.coffee = coffee
+
+  // latte-art surface — fades in on top of the crema during the milk pour
+  const latteArt = new THREE.Mesh(
+    new THREE.CircleGeometry(0.045, 32),
+    new THREE.MeshStandardMaterial({
+      map: latteArtTexture(), roughness: 0.6, transparent: true, opacity: 0,
+    })
+  )
+  latteArt.rotation.x = -Math.PI / 2
+  latteArt.position.y = 0.051
+  latteArt.visible = false
+  g.add(latteArt)
+  g.userData.latteArt = latteArt
 
   return g
 }

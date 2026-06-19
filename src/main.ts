@@ -9,13 +9,19 @@ import { buildMachine } from './objects/machine'
 import { buildGrinder } from './objects/grinder'
 import { buildCup } from './objects/cup'
 import { buildPour } from './objects/pour'
+import { buildPortafilter } from './objects/portafilter'
+import { buildTamper } from './objects/tamper'
+import { buildMilkPitcher } from './objects/pitcher'
+import { buildSteam, updateSteam } from './objects/steam'
 import { Interactions } from './interactions/raycaster'
 import { TextReveal } from './ui/textReveal'
+import { Hint } from './ui/hint'
 import { CameraRig, type Station } from './scene/camera'
 import { buildAffordance } from './scene/affordance'
-import { Sequence, type StationDef } from './interactions/sequence'
+import { Workflow, type Step } from './interactions/workflow'
 import { StartPrompt } from './ui/startPrompt'
 
+// ---------- scene / camera / renderer ----------
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x2a1d12)
 scene.fog = new THREE.Fog(0x2a1d12, 14, 34)
@@ -23,9 +29,6 @@ scene.fog = new THREE.Fog(0x2a1d12, 14, 34)
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100)
 const stations: Station[] = [
   { pos: new THREE.Vector3(0, 1.6, 4.5), look: new THREE.Vector3(0, 1.1, -1) },
-  { pos: new THREE.Vector3(-1.3, 1.25, -0.1), look: new THREE.Vector3(-1.3, 1.0, -1.05) },
-  { pos: new THREE.Vector3(0, 1.3, 0.2), look: new THREE.Vector3(0, 1.15, -1.15) },
-  { pos: new THREE.Vector3(1.2, 1.25, 0.0), look: new THREE.Vector3(1.2, 1.0, -0.95) },
 ]
 const rig = new CameraRig(camera, stations)
 
@@ -43,6 +46,7 @@ scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
 
 const { edisonBulb } = setupLighting(scene)
 
+// ---------- static set ----------
 scene.add(buildRoom())
 scene.add(buildDecor())
 
@@ -58,24 +62,286 @@ const grinder = buildGrinder()
 grinder.position.set(-1.3, 0.9, -1.05)
 scene.add(grinder)
 
+// ---------- workflow props ----------
+const DOCK = new THREE.Vector3(-0.32, 1.04, -0.81)        // portafilter locked on the machine
+const DOCK_LIFT = new THREE.Vector3(-0.32, 1.2, -0.64)    // lifted clear of the head
+const GRIND_POS = new THREE.Vector3(-1.3, 0.97, -0.82)    // held under the grinder chute
+const CUP_START = new THREE.Vector3(1.2, 0.9, -0.95)
+const CUP_UNDER = new THREE.Vector3(-0.32, 0.9, -0.78)    // under the group, catching the shot
+const CUP_SERVE = new THREE.Vector3(0.05, 0.95, 0.8)      // slid toward the camera
+const PITCHER_PARK = new THREE.Vector3(0.55, 0.9, -0.78)
+const STEAM_POS = new THREE.Vector3(-0.62, 0.9, -0.82)    // pitcher under the steam wand
+const ART_POS = new THREE.Vector3(-0.32, 1.06, -0.62)     // pitcher tilted over the cup
+const TAMP_PARK = new THREE.Vector3(-1.88, 0.92, -0.66)
+
 const cup = buildCup()
-cup.position.set(1.2, 0.9, -0.95)
+cup.position.copy(CUP_START)
 scene.add(cup)
 
 const pour = buildPour()
-pour.position.set(-0.32, 1.02, -0.85)
+pour.position.set(-0.32, 0.99, -0.78)
 scene.add(pour)
+
+const portafilter = buildPortafilter()
+portafilter.position.copy(DOCK)
+scene.add(portafilter)
+
+const tamper = buildTamper()
+tamper.position.copy(TAMP_PARK)
+tamper.visible = false
+scene.add(tamper)
+
+const pitcher = buildMilkPitcher()
+pitcher.position.copy(PITCHER_PARK)
+scene.add(pitcher)
+
+const steam = buildSteam()
+steam.position.set(-0.62, 1.04, -0.82)
+scene.add(steam)
 
 const affordance = buildAffordance()
 scene.add(affordance)
 
-let time = 0
+let steamIntensity = 0
+
+// ---------- camera framings ----------
+const CAM = {
+  machine: { pos: new THREE.Vector3(-0.3, 1.15, -0.02), look: new THREE.Vector3(-0.32, 1.0, -0.82) },
+  grind: { pos: new THREE.Vector3(-1.2, 1.1, -0.34), look: new THREE.Vector3(-1.3, 0.97, -0.85) },
+  tamp: { pos: new THREE.Vector3(-1.16, 1.17, -0.36), look: new THREE.Vector3(-1.3, 0.99, -0.84) },
+  pull: { pos: new THREE.Vector3(-0.32, 1.1, -0.18), look: new THREE.Vector3(-0.32, 0.98, -0.8) },
+  steam: { pos: new THREE.Vector3(-0.6, 1.12, -0.12), look: new THREE.Vector3(-0.62, 0.97, -0.84) },
+  art: { pos: new THREE.Vector3(-0.32, 1.3, -0.24), look: new THREE.Vector3(-0.33, 0.99, -0.8) },
+  serve: { pos: new THREE.Vector3(0.05, 1.2, 1.35), look: new THREE.Vector3(0.04, 0.96, 0.1) },
+}
+
+// ---------- helpers ----------
+const grounds = () => portafilter.userData.grounds as THREE.Mesh
+const coffee = () => cup.userData.coffee as THREE.Mesh
+const latteArt = () => cup.userData.latteArt as THREE.Mesh
+
+function resetScene() {
+  portafilter.position.copy(DOCK)
+  portafilter.rotation.set(0, 0, 0)
+  grounds().visible = false
+  grounds().scale.set(1, 0.001, 1)
+  grounds().position.y = 0.012
+
+  cup.position.copy(CUP_START)
+  cup.rotation.set(0, 0, 0)
+  const c = coffee()
+  c.visible = false
+  c.scale.set(1, 0.001, 1)
+  c.position.y = 0.018
+  ;(c.material as THREE.MeshStandardMaterial).color.setHex(0x2a1407)
+
+  const a = latteArt()
+  a.visible = false
+  a.scale.set(1, 1, 1)
+  ;(a.material as THREE.MeshStandardMaterial).opacity = 0
+
+  pitcher.position.copy(PITCHER_PARK)
+  pitcher.rotation.set(0, 0, 0)
+  tamper.visible = false
+  tamper.position.copy(TAMP_PARK)
+  pour.visible = false
+  steamIntensity = 0
+  steam.visible = false
+}
+
+// ---------- UI ----------
+const ui = document.getElementById('ui')!
+const interactions = new Interactions(camera, renderer.domElement)
+const textReveal = new TextReveal(ui)
+const hint = new Hint(ui)
+
+const fade = document.createElement('div')
+fade.style.cssText =
+  'position:fixed;inset:0;background:#0a0805;opacity:0;pointer-events:none;transition:none;z-index:5'
+document.body.appendChild(fade)
+
+// ---------- the barista workflow ----------
+const steps: Step[] = [
+  {
+    id: 'detach',
+    cam: CAM.machine,
+    auto: 1.8,
+    hint: 'taking the portafilter',
+    textHold: 0.3,
+    onEnter: () => {
+      gsap.timeline()
+        .to(portafilter.rotation, { y: -0.5, duration: 0.4, ease: 'power1.in' })
+        .to(portafilter.position, { y: DOCK_LIFT.y, z: DOCK_LIFT.z, duration: 0.4, ease: 'power2.out' })
+        .to(portafilter.position, { x: GRIND_POS.x, y: GRIND_POS.y, z: GRIND_POS.z, duration: 0.8, ease: 'power2.inOut' })
+        .to(portafilter.rotation, { y: 0, duration: 0.4 }, '-=0.5')
+    },
+  },
+  {
+    id: 'grind',
+    cam: CAM.grind,
+    target: grinder,
+    ringAt: new THREE.Vector3(-1.3, 0, -0.86),
+    hold: 2.2,
+    hint: 'hold to grind',
+    label: 'Grind · 01',
+    body: "I'm Levente — a developer from Pécs who builds things in order to understand them. Skateboards, espresso, and clean code, roughly in that order.",
+    onProgress: (t) => {
+      const beans = grinder.userData.beans as THREE.Group
+      beans.children.forEach((b, i) => {
+        b.position.y = 0.48 + Math.abs(Math.sin(performance.now() * 0.02 + i)) * 0.04 * (1 - t * 0.5)
+      })
+      const g = grounds()
+      g.visible = true
+      g.scale.y = Math.max(0.001, t)
+      g.position.y = 0.012 + t * 0.004
+    },
+  },
+  {
+    id: 'tamp',
+    cam: CAM.tamp,
+    target: portafilter,
+    ringAt: new THREE.Vector3(-1.3, 0, -0.82),
+    hold: 1.4,
+    hint: 'hold to tamp',
+    label: 'Tamp · 02',
+    body: 'Measure, level, press. I care about the unglamorous parts — types, tests, the build staying green. The details are the work.',
+    onEnter: () => {
+      tamper.visible = true
+      tamper.position.set(GRIND_POS.x, 1.16, GRIND_POS.z)
+    },
+    onProgress: (t) => {
+      tamper.position.y = 1.16 - t * 0.16
+      grounds().scale.y = 1 - t * 0.34
+    },
+    onComplete: () => {
+      gsap.to(tamper.position, {
+        y: 1.22, duration: 0.4, ease: 'power1.in',
+        onComplete: () => { tamper.visible = false; tamper.position.copy(TAMP_PARK) },
+      })
+    },
+  },
+  {
+    id: 'lock',
+    cam: CAM.machine,
+    auto: 1.9,
+    hint: 'locking it in',
+    textHold: 0.3,
+    onEnter: () => {
+      gsap.to(cup.position, { x: CUP_UNDER.x, y: CUP_UNDER.y, z: CUP_UNDER.z, duration: 1.0, ease: 'power2.inOut' })
+      portafilter.rotation.y = -0.45
+      gsap.timeline()
+        .to(portafilter.position, { x: DOCK_LIFT.x, y: DOCK_LIFT.y, z: DOCK_LIFT.z, duration: 0.7, ease: 'power2.inOut' })
+        .to(portafilter.position, { x: DOCK.x, y: DOCK.y, z: DOCK.z, duration: 0.45, ease: 'power2.in' })
+        .to(portafilter.rotation, { y: 0, duration: 0.4, ease: 'power1.out' })
+    },
+  },
+  {
+    id: 'pull',
+    cam: CAM.pull,
+    target: machine,
+    ringAt: CUP_UNDER,
+    hold: 2.6,
+    hint: 'hold to pull the shot',
+    label: 'Pull · 03',
+    body: 'Angular and TypeScript by day; FastAPI, Spring Boot, and Docker when a project asks for more. I learn by shipping.',
+    onProgress: (t) => {
+      pour.visible = t > 0.12 && t < 0.96
+      const c = coffee()
+      c.visible = true
+      const fill = Math.min(t, 1)
+      c.scale.y = Math.max(0.001, fill * 40)
+      c.position.y = 0.018 + fill * 0.03
+      ;(c.material as THREE.MeshStandardMaterial).color.setRGB(0.16 + fill * 0.22, 0.08 + fill * 0.12, 0.03 + fill * 0.04)
+    },
+    onComplete: () => { pour.visible = false },
+  },
+  {
+    id: 'steam',
+    cam: CAM.steam,
+    target: pitcher,
+    ringAt: new THREE.Vector3(-0.62, 0, -0.82),
+    hold: 2.2,
+    hint: 'hold to steam the milk',
+    label: 'Steam · 04',
+    body: "I like the messy middle — steaming, swirling, adjusting until it sits right. Most of what I know came from a project that fought back.",
+    onEnter: () => {
+      gsap.to(pitcher.position, { x: STEAM_POS.x, y: STEAM_POS.y, z: STEAM_POS.z, duration: 0.9, ease: 'power2.inOut' })
+    },
+    onProgress: (t) => {
+      steamIntensity = t
+      pitcher.position.x = STEAM_POS.x + Math.sin(performance.now() * 0.03) * 0.004 * t
+    },
+    onComplete: () => { steamIntensity = 0 },
+  },
+  {
+    id: 'art',
+    cam: CAM.art,
+    target: pitcher,
+    ringAt: new THREE.Vector3(-0.32, 0, -0.74),
+    hold: 2.4,
+    hint: 'pour the latte art',
+    label: 'Pour · 05',
+    body: "StudyMate, UniTools, a municipal platform in production — I build whole things, not demos. Each one taught me something the last couldn't.",
+    onEnter: () => {
+      gsap.timeline()
+        .to(pitcher.position, { x: ART_POS.x, y: ART_POS.y, z: ART_POS.z, duration: 0.7, ease: 'power2.inOut' })
+        .to(pitcher.rotation, { x: 0.7, duration: 0.4 }, '-=0.2')
+    },
+    onProgress: (t) => {
+      const a = latteArt()
+      a.visible = true
+      ;(a.material as THREE.MeshStandardMaterial).opacity = Math.min(1, t * 1.15)
+      a.scale.setScalar(0.5 + t * 0.5)
+      ;(coffee().material as THREE.MeshStandardMaterial).color.setRGB(0.22 + t * 0.22, 0.13 + t * 0.16, 0.06 + t * 0.1)
+    },
+    onComplete: () => {
+      gsap.to(pitcher.rotation, { x: 0, duration: 0.4 })
+      gsap.to(pitcher.position, { x: PITCHER_PARK.x, y: PITCHER_PARK.y, z: PITCHER_PARK.z, duration: 0.9, ease: 'power2.inOut' })
+    },
+  },
+  {
+    id: 'serve',
+    cam: CAM.serve,
+    auto: 2.2,
+    hint: 'enjoy',
+    label: 'Served · 06',
+    body: "Thanks for stopping by. Let's build something.<br>lokoslevi12@gmail.com · github.com/LksLvnt",
+    textHold: 4.8,
+    onEnter: () => {
+      gsap.to(cup.position, { x: CUP_SERVE.x, y: CUP_SERVE.y, z: CUP_SERVE.z, duration: 1.7, ease: 'power2.inOut' })
+      gsap.to(cup.rotation, { y: Math.PI * 0.25, duration: 1.7 })
+    },
+  },
+]
+
+// ---------- loop reset ----------
+let bulbAuto = true
+function loopReset() {
+  bulbAuto = false
+  gsap.timeline({ onComplete: () => { bulbAuto = true } })
+    .to(edisonBulb, { intensity: 5.5, duration: 0.07, yoyo: true, repeat: 5 }, 0)
+    .to(fade, { opacity: 1, duration: 0.55, ease: 'power2.in' }, 0.1)
+    .add(() => { resetScene(); rig.toIntro(0.1) }, 0.7)
+    .to(fade, { opacity: 0, duration: 0.9, ease: 'power2.out' }, 0.85)
+    .add(() => prompt.show('again?'), 1.7)
+}
+
+const workflow = new Workflow(steps, interactions, rig, textReveal, hint, affordance, loopReset)
+
+const prompt = new StartPrompt(ui, () => {
+  rig.setIdle(false)
+  workflow.restart()
+})
+
+// ---------- loop ----------
+const clock = new THREE.Clock()
 function animate() {
   requestAnimationFrame(animate)
-  time += 0.01
-  // warm Edison flicker — slow breathe plus a faint high-frequency shimmer
-  edisonBulb.intensity = 2.4 + Math.sin(time * 1.3) * 0.12 + Math.sin(time * 7.7) * 0.03
-  sequence.update()
+  const dt = Math.min(clock.getDelta(), 0.05)
+  const time = clock.getElapsedTime()
+  if (bulbAuto) edisonBulb.intensity = 2.4 + Math.sin(time * 1.3) * 0.12 + Math.sin(time * 7.7) * 0.03
+  updateSteam(steam, steamIntensity, time)
+  workflow.update(dt, time)
   rig.update()
   renderer.render(scene, camera)
 }
@@ -86,61 +352,5 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight)
 })
 
-const interactions = new Interactions(camera, renderer.domElement)
-const textReveal = new TextReveal(document.getElementById('ui')!)
-
-const stationDefs: StationDef[] = [
-  {
-    object: grinder,
-    label: 'Grind · 01',
-    body: "I'm Levente — a developer from Pécs who builds things in order to understand them. Skateboards, espresso, and clean code, roughly in that order.",
-    hold: 2,
-    onProgress: (t) => {
-      const beans = grinder.userData.beans as THREE.Group
-      beans.children.forEach((b, i) => {
-        b.position.y = 0.48 + Math.abs(Math.sin(performance.now() * 0.02 + i)) * 0.04 * (1 - t * 0.5)
-      })
-    },
-  },
-  {
-    object: machine,
-    label: 'Pull · 02',
-    body: 'I work in Angular and TypeScript by day, and reach for FastAPI, Spring Boot, and Docker when a project demands more. I learn by shipping.',
-    hold: 2.5,
-    onArrive: (ready) => {
-      gsap.to(cup.position, {
-        x: -0.32, z: -0.85, duration: 0.9, ease: 'power2.inOut',
-        onComplete: ready
-      })
-    },
-    onProgress: (t) => {
-      pour.visible = t > 0.15 && t < 0.95
-      const coffee = cup.userData.coffee as THREE.Mesh
-      coffee.visible = true
-      const fill = Math.min(t, 1)
-      coffee.scale.y = fill * 40
-      coffee.position.y = 0.018 + fill * 0.03
-      const mat = coffee.material as THREE.MeshStandardMaterial
-      mat.color.setRGB(0.16 + fill * 0.25, 0.08 + fill * 0.14, 0.03 + fill * 0.04)
-    },
-    onComplete: () => {
-      pour.visible = false
-      gsap.to(cup.position, { x: 1.2, z: -0.95, duration: 1.0, ease: 'power2.inOut' })
-    },
-  },
-  {
-    object: cup,
-    label: 'Pour · 03',
-    body: 'StudyMate, UniTools, a municipal platform in production — I build full things, not demos. Each one taught me something the last one couldn\'t.',
-    hold: 2,
-  },
-]
-
-const sequence = new Sequence(stationDefs, interactions, rig, textReveal, affordance)
-
-new StartPrompt(document.getElementById('ui')!, () => {
-  rig.setIdle(false)
-  sequence.start()
-})
-
+prompt.show('make a coffee')
 animate()

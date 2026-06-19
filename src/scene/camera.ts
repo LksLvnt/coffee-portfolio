@@ -35,6 +35,22 @@ export class CameraRig {
     })
   }
 
+  // Fly to an arbitrary framing (used by the workflow steps).
+  flyTo(pos: THREE.Vector3, look: THREE.Vector3, duration = 1.6) {
+    this.idle = false
+    this.current = -1
+    gsap.to(this.camera.position, { x: pos.x, y: pos.y, z: pos.z, duration, ease: 'power2.inOut' })
+    gsap.to(this.lookTarget, { x: look.x, y: look.y, z: look.z, duration, ease: 'power2.inOut' })
+  }
+
+  // Return to the opening wide shot and resume the idle drift (for the loop reset).
+  toIntro(duration = 1.4) {
+    const s = this.stations[0]
+    gsap.to(this.camera.position, { x: s.pos.x, y: s.pos.y, z: s.pos.z, duration, ease: 'power2.inOut' })
+    gsap.to(this.lookTarget, { x: s.look.x, y: s.look.y, z: s.look.z, duration, ease: 'power2.inOut' })
+    gsap.delayedCall(duration, () => { this.current = 0; this.idle = true })
+  }
+
   setIdle(v: boolean) {
     this.idle = v
   }

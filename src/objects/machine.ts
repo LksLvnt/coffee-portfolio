@@ -23,18 +23,22 @@ export function buildMachine(): THREE.Group {
   g.add(backPanel)
 
   for (const x of [-0.32, 0.32]) {
-  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.085, 0.18, 24), chrome)
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.085, 0.18, 24), chrome)
     head.position.set(x, 0.22, 0.3)
     g.add(head)
 
-    const pf = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.05, 24), chrome)
-    pf.position.set(x, 0.14, 0.34)
-    g.add(pf)
+    // The left head is the working socket — the detachable portafilter locks
+    // in there during the workflow. The right head keeps a static portafilter.
+    if (x === 0.32) {
+      const pf = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.05, 24), chrome)
+      pf.position.set(x, 0.14, 0.34)
+      g.add(pf)
 
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.22, 16), woodHandle)
-    handle.rotation.x = Math.PI / 2
-    handle.position.set(x, 0.14, 0.5)
-    g.add(handle)
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.22, 16), woodHandle)
+      handle.rotation.x = Math.PI / 2
+      handle.position.set(x, 0.14, 0.5)
+      g.add(handle)
+    }
   }
 
   for (const x of [-0.62, 0.62]) {

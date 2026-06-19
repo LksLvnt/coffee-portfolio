@@ -162,3 +162,42 @@ export function rugTexture() {
   }
   return toTex(c)
 }
+
+// Latte-art rosetta sitting on a milk-crema surface (overlaid on the espresso).
+export function latteArtTexture() {
+  const { c, ctx } = canvas(256, 256)
+  // milk crema base
+  const grad = ctx.createRadialGradient(128, 110, 16, 128, 128, 128)
+  grad.addColorStop(0, '#dcc098')
+  grad.addColorStop(0.7, '#c0a073')
+  grad.addColorStop(1, '#a37f54')
+  ctx.beginPath(); ctx.arc(128, 128, 126, 0, Math.PI * 2)
+  ctx.fillStyle = grad; ctx.fill()
+
+  // rosetta — white milk foam
+  ctx.fillStyle = '#fbf4e6'
+  ctx.strokeStyle = '#fbf4e6'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = 7
+  ctx.beginPath(); ctx.moveTo(128, 52); ctx.lineTo(128, 214); ctx.stroke()
+
+  const rows = 7
+  for (let i = 0; i < rows; i++) {
+    const y = 78 + i * 19
+    const w = 54 - i * 5.5
+    for (const s of [-1, 1]) {
+      ctx.beginPath()
+      ctx.moveTo(128, y - 12)
+      ctx.quadraticCurveTo(128 + s * w, y - 8, 128 + s * w * 0.55, y + 16)
+      ctx.quadraticCurveTo(128 + s * w * 0.2, y + 6, 128, y + 13)
+      ctx.closePath()
+      ctx.fill()
+    }
+  }
+  // rounded top of the pour
+  ctx.beginPath(); ctx.arc(128, 64, 18, 0, Math.PI * 2); ctx.fill()
+
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}

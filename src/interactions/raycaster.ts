@@ -17,6 +17,12 @@ export class Interactions {
   private hovered: Interactive | null = null
   private active: Interactive | null = null
 
+  // drag on empty space → look-around; set by the app
+  onDrag: ((dx: number, dy: number) => void) | null = null
+  private dragging = false
+  private lastX = 0
+  private lastY = 0
+
   constructor(camera: THREE.Camera, dom: HTMLElement) {
     this.camera = camera
     this.dom = dom
@@ -47,23 +53,38 @@ export class Interactions {
   }
 
   private onMove = (e: PointerEvent) => {
+    if (this.dragging) {
+      this.onDrag?.(e.clientX - this.lastX, e.clientY - this.lastY)
+      this.lastX = e.clientX
+      this.lastY = e.clientY
+      return
+    }
     this.setPointer(e)
     const hit = this.pick()
     if (hit !== this.hovered) {
       this.hovered?.onUnhover?.()
       this.hovered = hit
       this.hovered?.onHover?.()
-      this.dom.style.cursor = hit ? 'pointer' : 'default'
+      this.dom.style.cursor = hit ? 'pointer' : 'grab'
     }
   }
 
   private onDown = (e: PointerEvent) => {
     this.setPointer(e)
     const hit = this.pick()
-    if (hit) { this.active = hit; hit.onDown?.() }
+    if (hit) {
+      this.active = hit
+      hit.onDown?.()
+    } else {
+      this.dragging = true
+      this.lastX = e.clientX
+      this.lastY = e.clientY
+      this.dom.style.cursor = 'grabbing'
+    }
   }
 
   private onUp = () => {
     if (this.active) { this.active.onUp?.(); this.active = null }
+    if (this.dragging) { this.dragging = false; this.dom.style.cursor = 'grab' }
   }
 }

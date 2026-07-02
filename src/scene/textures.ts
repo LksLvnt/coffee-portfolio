@@ -162,3 +162,89 @@ export function rugTexture() {
   }
   return toTex(c)
 }
+
+// Vintage café wall poster: cream card, line-art cup, big word underneath.
+export function posterTexture(word: string, accent = '#8a4b22') {
+  const { c, ctx } = canvas(256, 340)
+  ctx.fillStyle = '#efe4cd'
+  ctx.fillRect(0, 0, 256, 340)
+  ctx.strokeStyle = accent
+  ctx.lineWidth = 5
+  ctx.strokeRect(14, 14, 228, 312)
+
+  ctx.strokeStyle = '#3a2410'
+  ctx.lineWidth = 6
+  ctx.lineCap = 'round'
+  // cup body
+  ctx.beginPath()
+  ctx.moveTo(88, 130)
+  ctx.bezierCurveTo(88, 190, 168, 190, 168, 130)
+  ctx.closePath()
+  ctx.stroke()
+  // handle
+  ctx.beginPath()
+  ctx.arc(174, 145, 16, -Math.PI / 2, Math.PI / 2)
+  ctx.stroke()
+  // saucer
+  ctx.beginPath()
+  ctx.moveTo(70, 196); ctx.lineTo(186, 196)
+  ctx.stroke()
+  // steam curls
+  ctx.lineWidth = 4
+  for (const x of [110, 130, 150]) {
+    ctx.beginPath()
+    ctx.moveTo(x, 108)
+    ctx.bezierCurveTo(x - 8, 92, x + 8, 78, x, 62)
+    ctx.stroke()
+  }
+
+  ctx.fillStyle = '#3a2410'
+  ctx.font = 'bold 34px Georgia, serif'
+  ctx.textAlign = 'center'
+  ctx.fillText(word, 128, 262)
+  ctx.font = '15px Georgia, serif'
+  ctx.fillStyle = accent
+  ctx.fillText('· est. Pécs ·', 128, 292)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+// Latte-art rosetta sitting on a milk-crema surface (overlaid on the espresso).
+export function latteArtTexture() {
+  const { c, ctx } = canvas(256, 256)
+  // milk crema base
+  const grad = ctx.createRadialGradient(128, 110, 16, 128, 128, 128)
+  grad.addColorStop(0, '#dcc098')
+  grad.addColorStop(0.7, '#c0a073')
+  grad.addColorStop(1, '#a37f54')
+  ctx.beginPath(); ctx.arc(128, 128, 126, 0, Math.PI * 2)
+  ctx.fillStyle = grad; ctx.fill()
+
+  // rosetta — white milk foam
+  ctx.fillStyle = '#fbf4e6'
+  ctx.strokeStyle = '#fbf4e6'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = 7
+  ctx.beginPath(); ctx.moveTo(128, 52); ctx.lineTo(128, 214); ctx.stroke()
+
+  const rows = 7
+  for (let i = 0; i < rows; i++) {
+    const y = 78 + i * 19
+    const w = 54 - i * 5.5
+    for (const s of [-1, 1]) {
+      ctx.beginPath()
+      ctx.moveTo(128, y - 12)
+      ctx.quadraticCurveTo(128 + s * w, y - 8, 128 + s * w * 0.55, y + 16)
+      ctx.quadraticCurveTo(128 + s * w * 0.2, y + 6, 128, y + 13)
+      ctx.closePath()
+      ctx.fill()
+    }
+  }
+  // rounded top of the pour
+  ctx.beginPath(); ctx.arc(128, 64, 18, 0, Math.PI * 2); ctx.fill()
+
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}

@@ -20,6 +20,15 @@ export function buildCup(): THREE.Group {
   handle.rotation.y = Math.PI / 2
   g.add(handle)
 
+  // gold rim line just under the lip
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.0495, 0.0016, 8, 40),
+    new THREE.MeshStandardMaterial({ color: 0xc9a14a, metalness: 0.85, roughness: 0.3 })
+  )
+  rim.rotation.x = Math.PI / 2
+  rim.position.y = 0.082
+  g.add(rim)
+
   const coffeeMat = new THREE.MeshStandardMaterial({ color: 0x2a1407, roughness: 0.25, metalness: 0 })
   const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.032, 0.001, 24), coffeeMat)
   coffee.position.y = 0.018

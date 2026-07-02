@@ -27,7 +27,7 @@ export class Workflow {
   private rig: CameraRig
   private text: TextReveal
   private hint: Hint
-  private affordance: THREE.Mesh
+  private affordance: THREE.Group
   private onFinish: () => void
 
   private index = -1
@@ -43,7 +43,7 @@ export class Workflow {
     rig: CameraRig,
     text: TextReveal,
     hint: Hint,
-    affordance: THREE.Mesh,
+    affordance: THREE.Group,
     onFinish: () => void
   ) {
     this.steps = steps
@@ -99,7 +99,8 @@ export class Workflow {
 
     if (step.target) {
       const p = step.ringAt ?? step.target.getWorldPosition(new THREE.Vector3())
-      this.affordance.position.set(p.x, 0.92, p.z)
+      this.affordance.position.set(p.x, p.y > 0 ? p.y : 0.92, p.z)
+      this.affordance.userData.setProgress?.(0)
       this.affordance.visible = true
     }
     if (step.hint) this.hint.show(step.hint)
@@ -115,9 +116,8 @@ export class Workflow {
         step.onProgress?.(this.progress)
         if (this.progress >= 1) this.complete(step)
       } else if (step.target) {
-        this.affordance.rotation.z = time
-        const m = this.affordance.material as THREE.MeshBasicMaterial
-        m.opacity = 0.4 + Math.sin(time * 3) * 0.2
+        this.affordance.userData.update?.(time)
+        this.affordance.userData.setProgress?.(this.progress)
         if (this.holding && this.progress < 1) {
           this.progress = Math.min(1, this.progress + dt / (step.hold ?? 2))
           step.onProgress?.(this.progress)

@@ -6,16 +6,20 @@ export function buildMilkPitcher(): THREE.Group {
   const g = new THREE.Group()
   const metal = new THREE.MeshStandardMaterial({ color: 0xd6d6d9, metalness: 0.95, roughness: 0.22 })
 
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.062, 0.12, 22), metal)
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.065, 0.12, 22), metal)
   body.position.y = 0.06
   body.castShadow = true
   g.add(body)
 
-  // pinched pouring spout
-  const spout = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.045, 12, 1, true), metal)
-  spout.position.set(0, 0.12, 0.045)
-  spout.rotation.x = 0.6
-  g.add(spout)
+  // rim band + small pinched pouring lip at the front of the rim
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.004, 8, 22), metal)
+  rim.rotation.x = Math.PI / 2
+  rim.position.y = 0.12
+  g.add(rim)
+  const lip = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.032, 3, 1, true), metal)
+  lip.position.set(0, 0.124, 0.052)
+  lip.rotation.set(1.9, 0, Math.PI)
+  g.add(lip)
 
   // handle loop on the back
   const handle = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.008, 10, 20, Math.PI), metal)

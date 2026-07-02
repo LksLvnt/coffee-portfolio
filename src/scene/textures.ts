@@ -163,6 +163,53 @@ export function rugTexture() {
   return toTex(c)
 }
 
+// Vintage café wall poster: cream card, line-art cup, big word underneath.
+export function posterTexture(word: string, accent = '#8a4b22') {
+  const { c, ctx } = canvas(256, 340)
+  ctx.fillStyle = '#efe4cd'
+  ctx.fillRect(0, 0, 256, 340)
+  ctx.strokeStyle = accent
+  ctx.lineWidth = 5
+  ctx.strokeRect(14, 14, 228, 312)
+
+  ctx.strokeStyle = '#3a2410'
+  ctx.lineWidth = 6
+  ctx.lineCap = 'round'
+  // cup body
+  ctx.beginPath()
+  ctx.moveTo(88, 130)
+  ctx.bezierCurveTo(88, 190, 168, 190, 168, 130)
+  ctx.closePath()
+  ctx.stroke()
+  // handle
+  ctx.beginPath()
+  ctx.arc(174, 145, 16, -Math.PI / 2, Math.PI / 2)
+  ctx.stroke()
+  // saucer
+  ctx.beginPath()
+  ctx.moveTo(70, 196); ctx.lineTo(186, 196)
+  ctx.stroke()
+  // steam curls
+  ctx.lineWidth = 4
+  for (const x of [110, 130, 150]) {
+    ctx.beginPath()
+    ctx.moveTo(x, 108)
+    ctx.bezierCurveTo(x - 8, 92, x + 8, 78, x, 62)
+    ctx.stroke()
+  }
+
+  ctx.fillStyle = '#3a2410'
+  ctx.font = 'bold 34px Georgia, serif'
+  ctx.textAlign = 'center'
+  ctx.fillText(word, 128, 262)
+  ctx.font = '15px Georgia, serif'
+  ctx.fillStyle = accent
+  ctx.fillText('· est. Pécs ·', 128, 292)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
 // Latte-art rosetta sitting on a milk-crema surface (overlaid on the espresso).
 export function latteArtTexture() {
   const { c, ctx } = canvas(256, 256)

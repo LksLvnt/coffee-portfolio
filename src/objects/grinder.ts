@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { pipe, vec } from './pipe'
 
 export function buildGrinder(): THREE.Group {
   const g = new THREE.Group()
@@ -61,18 +62,13 @@ export function buildGrinder(): THREE.Group {
   plate.position.set(0, 0.16, 0.146)
   g.add(plate)
 
-  // dosing throat + spout — grounds pour out here, over the portafilter fork
+  // dosing throat + spout — grounds pour down over the portafilter fork
   const throat = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.1, 16), dark)
-  throat.position.set(0, 0.13, 0.13)
+  throat.position.set(0, 0.15, 0.12)
   g.add(throat)
-  const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.022, 0.1, 14), metal)
-  spout.position.set(0, 0.17, 0.2)
-  spout.rotation.x = 0.6
-  spout.castShadow = true
-  g.add(spout)
-  const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.02, 14), dark)
-  mouth.position.set(0, 0.135, 0.235)
-  mouth.rotation.x = 0.6
+  g.add(pipe(vec(0, 0.2, 0.12), vec(0, 0.12, 0.24), 0.026, metal))
+  const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.024, 0.022, 14), dark)
+  mouth.position.set(0, 0.12, 0.24)
   g.add(mouth)
 
   // fork that cradles the portafilter under the spout
